@@ -1,0 +1,101 @@
+---
+title: "TSA signal generator"
+author: "omidalam"
+date: "9/8/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(rtracklayer)
+library(GenomicRanges)
+library(ggplot2)
+library(myfuncs)
+```
+
+# Intro
+
+TSA_slope models TSA-seq signal by using polynomial fitting in different size windows. Upon polynomial approxiation, 
+TSA_slopr can approximate TSA-seq slope by calculating the first order derivative of this approximation.
+The center of a high slope region is determined by second derivative of this approximation.
+
+Several parameters affect the behavior of this approximation.
+
++ bin size
++ Number of bins used for smoothing
++ Polynomial degre (has little effect beyond linear)
+
+In this document I want to create different patterns of TSA-seq and see the effect on TSA-slope.
+
+# Model signals
+## flat-linear-flat
+bin size: 20 kb
+flat 1 mb which is 50 bin
+linear 1 mb which 50 bin
+flat 1 mb which 50 bin
+
+
+```{r}
+signal_pltr<-function(BW){
+  BW_slp<-BW_slopr(BW,bin=NA,slop_wind = 20)
+  BW_smth<-BW_smthr(BW,bin=NA,smth_wind =20)
+  data<-data.frame(TSA_score=BW$score,TSA_smth=BW_smth$score,TSA_slp=BW_slp$score,Mbp=seq(1,tot_bins))
+  all_plot<-ggplot(data = data)+geom_line(aes(x=Mbp,y=TSA_score,colour="TSA score"))+
+    geom_point(aes(x=Mbp,y=TSA_smth,colour="TSA smooth"),size=0.3)+
+    geom_line(aes(x=Mbp,y=TSA_slp*50,colour="TSA slope"))
+  all_plot<-all_plot+scale_y_continuous(sec.axis = sec_axis(~./50, name = "TSA slope"))
+  return(all_plot)
+}
+```
+```{r}
+
+bin<-2e4
+flat<-50
+linear<-100
+tot_bins<-(2*flat+linear)
+region_len<-tot_bins*bin
+
+start_flat_val=-1.5
+end_flat_val=1.5
+flf<-GRanges(
+  seqnames=Rle(c(rep("chr1",tot_bins))),
+  ranges=IRanges(start=seq(1,region_len-bin+1, by=bin), width=bin),
+  score=rep(0,tot_bins)
+)
+
+
+flf$score[1:flat-1]=start_flat_val
+flf$score[(flat):(flat+linear)]=seq(start_flat_val,end_flat_val,length.out = linear+1)
+flf$score[(flat+linear):tot_bins]=end_flat_val
+flf$score<-flf$score+0.00001
+seqlengths(flf)<-region_len
+
+signal_pltr(flf)
+```
+
+```{r}
+
+bin<-2e4
+flat<-30
+linear<-30
+tot_bins<-(2*flat+linear)
+region_len<-tot_bins*bin
+
+start_flat_val=1.5
+end_flat_val=-1.5
+flf<-GRanges(
+  seqnames=Rle(c(rep("chr1",tot_bins))),
+  ranges=IRanges(start=seq(1,region_len-bin+1, by=bin), width=bin),
+  score=rep(0,tot_bins)
+)
+
+
+flf$score[1:flat-1]=start_flat_val
+flf$score[(flat):(flat+linear)]=seq(start_flat_val,end_flat_val,length.out = linear+1)
+flf$score[(flat+linear):tot_bins]=end_flat_val
+flf$score<-flf$score+0.00001
+seqlengths(flf)<-region_len
+signal_pltr(flf)+geom_vline(xintercept = tot_bins/2)
+# View(flf$score)
+```
