@@ -1,0 +1,78 @@
+---
+title: "smthr_improvements"
+author: "omidalam"
+date: "11/25/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(rtracklayer)
+library(zoo)
+# library(proj4) 
+library(ggplot2) 
+# library(rgdal)
+library(tidyr) 
+library(rollply) 
+library(plyr) 
+```
+
+
+# Import a file
+```{r}
+bw<-import("~/Box_Sync/Andy_lab/TSA_BigWig/tsa_bw_hg38/k562_c1r1_20k_mw20k_hg38.bw")
+# Transform into a DF.
+bw_df<-data.frame(score=bw$score)
+```
+#Prameters
+```{r}
+wind<- 20
+```
+
+#Smoother function
+```{r}
+smth<-function(x){
+  #fits a degree 3 polynomial
+  if (any(is.na(x))|any(x==0)){
+    return (0)
+  } else{
+    return(predict(lm(x~poly(1:(wind+1),3,raw = FALSE)),data.frame(1:(wind+1)))[wind/2+1])
+  }
+  
+}
+```
+
+#rolling window
+```{r}
+# df_roll<-rollply(bw_df,~score,wdw.size = wind+1,summarize, df.smth=smth)
+
+dat <- data.frame(time     = seq.int(1000),
+                  position = cumsum(rnorm(1000,0,10)))
+av <- rollply(dat, ~position, wdw.size=2, fun = max, padding = 0)
+head(av)
+```
+
+```{r}
+bw_df$smth<-rollapply(bw_df,wind+1,smth,align="center",fill=NA)
+View(df)
+```
+```{r}
+# Download and format data
+url <- "ftp://aftp.cmdl.noaa.gov/products/trends/co2/co2_mm_mlo.txt"
+hawaii <- read.table(url)[ ,c(3,4)]
+names(hawaii) <- c('date','CO2')
+hawaii[hawaii$CO2 < 0, "CO2"] <- NA # mark NAs as such
+
+# Display original trend
+CO2.plot <- ggplot(hawaii) + geom_line(aes(date, CO2)) + ylab("CO2 (ppm)")
+print(CO2.plot)
+```
+
+```{r}
+# with smoothed trend
+hawaii.smoothed <- rollply(hawaii, ~ date, wdw.size = 1,
+                           summarize, CO2.mean = mean(CO2, na.rm = TRUE), )
+CO2.plot + geom_line(aes(date, CO2.mean), data = hawaii.smoothed, color = 'red')
+```
+
