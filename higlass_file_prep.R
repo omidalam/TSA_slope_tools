@@ -31,11 +31,8 @@ higlass_file_prep<-function(bw_path,genome){
   # Convert the bedGraph to bigwig
   bw_exp_path<-paste(tools::file_path_sans_ext(bw_path),"negpy_",genome,".bw",sep='')
   bw_command<-paste("bedGraphToBigWig",bedgraph_clipped,gnm_file,bw_exp_path)
+  system(bw_command)
 }
-
-
-
-
 
 
 
