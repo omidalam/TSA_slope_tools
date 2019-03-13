@@ -6,13 +6,11 @@ higlass_file_prep<-function(bw_path,chrom.sizes.path){
   
   
 }
+library(rtracklayer)
+library(GenomeInfoDb)
 bw_path<-"~/Box_Sync/Andy_lab/TSA_BigWig/tsa_bw_hg38/k562_c1r1_20k_mw20k_hg38_slop.bw"
+chrom.sizes.path<-"~/git/negspy/negspy/data/hg38/chromInfo.txt"
+gnm<-read.table(chrom.sizes.path)
 bw<-import(bw_path)
-chroms<-c(paste("chr",1:22,sep=''),"chrX")
+valids<-(bw[seqnames(bw)%in%as.character(gnm$V1)])
 
-valids<-Rle(bw[seqnames(bw)==chroms])
-seqnames(valids)
-seqnames(bw)
-bw
-valids
-1:10
