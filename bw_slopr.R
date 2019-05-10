@@ -12,7 +12,7 @@
 #' x <- BW_slopr(bigwig, bin=2e4)
 #' 
 #' 
-BW_slopr<-function(BW,bin,slop_wind){
+BW_slopr<-function(BW,bin,slop_wind,abs_value=TRUE){
   #bin= How to bin the original data, if you want to bin every 20KB it would be
   #2e4. slop_wind=
   require(rtracklayer)
@@ -59,7 +59,7 @@ BW_slopr<-function(BW,bin,slop_wind){
       return (0)
     } else{
       c<-lm(x~poly(1:(wind+1),3,raw = TRUE))$coefficients
-      return(abs(c[2]+2*c[3]*((wind/2)+1)+3*c[4]*(((wind/2)+1)^2)))    
+      return ((c[2]+2*c[3]*((wind/2)+1)+3*c[4]*(((wind/2)+1)^2)))
     }
     
   }
@@ -70,6 +70,7 @@ BW_slopr<-function(BW,bin,slop_wind){
   
   temp<-BW_bn
   temp$score<-fits
+  if(abs_value){temp$score<-abs(temp$score)}
   
   return(temp)
 }
