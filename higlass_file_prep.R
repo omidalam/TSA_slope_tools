@@ -20,16 +20,17 @@ higlass_file_prep<-function(bw_path,genome){
   
   # Select the valid chromosomes in the original BW
   valids<-(bw[seqnames(bw)%in%as.character(gnm$V1)])
-  
+  valids<-valids[!is.na(valids$score)]
   # Clip the bedgraph based on the negspy genopme
   bedgraph<-tempfile(pattern = 'bg',fileext = ".bedGraph")
   bedgraph_clipped<-tempfile(pattern = 'bg',fileext = ".bedGraph")
+
   export(valids,con = bedgraph)
   clip_command<-paste("bedClip",bedgraph,gnm_file,bedgraph_clipped)
   system(clip_command)
   
   # Convert the bedGraph to bigwig
-  bw_exp_path<-paste(tools::file_path_sans_ext(bw_path),"negpy_",genome,".bw",sep='')
+  bw_exp_path<-paste(tools::file_path_sans_ext(bw_path),"_negpy_",genome,".bw",sep='')
   bw_command<-paste("bedGraphToBigWig",bedgraph_clipped,gnm_file,bw_exp_path)
   system(bw_command)
 }
