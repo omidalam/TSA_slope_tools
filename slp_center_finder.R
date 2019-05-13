@@ -1,11 +1,11 @@
 ## Center finder
 ## This function finds the centers of high slope regions.
-slp_center_find<-function(bw_path,quantile_cutoff=0.9,method="local_center",center_width=2e4){
+slp_center_find<-function(bw_slp_path,quantile_cutoff=0.9,method="local_center",center_width=2e4,export=TRUE){
   #
 
   library(rtracklayer)
   
-  slp<-import(bw_path)
+  slp<-import(bw_slp_path)
   cut_off<-quantile(slp$score,quantile_cutoff)
   slp.high<-slp[slp$score>cut_off]
   slp.high.bed<-reduce(slp.high)
@@ -30,13 +30,15 @@ slp_center_find<-function(bw_path,quantile_cutoff=0.9,method="local_center",cent
     slp.center<-resize(slp.high.bed,width = center_width, fix="center")
   }
   
-  cutoff_file_ext<-paste("hg",(1-quantile_cutoff)*100,sep="")
+  cutoff_file_ext<-paste("top",(1-quantile_cutoff)*100,sep="")
   
-  export(object=slp.center, con=paste(tools::file_path_sans_ext(basename(bw_path)),"_",
-                                    cutoff_file_ext,method,".bed",sep=''))
-  export(object = slp.high,con=paste(tools::file_path_sans_ext(basename(bw_path)),"_",
-                                         cutoff_file_ext,".bw",sep=''))
-  
+  if (export){
+    export(object=slp.center, con=paste(tools::file_path_sans_ext(basename(bw_slp_path)),"_",
+                                        cutoff_file_ext,method,".bed",sep=''))
+    export(object = slp.high,con=paste(tools::file_path_sans_ext(basename(bw_slp_path)),"_",
+                                       cutoff_file_ext,".bw",sep=''))
+  }
+  return(list(slp,slp.high,slp.high.bed))
   
   
 }
